@@ -1,0 +1,9 @@
+## I want to preface by saying this isn't necessarily as nice as I would have like, and the basic design is mostly because I have been sick with pneumonia for the past week. I am recovering though!
+
+For this project I used ChatGPT 5.2 to generate an image of my favorite foods mixed. I chose this one because I am most knowledgable about ChatGPT, and I forgot that my free trial for ChatGPT had ended so I apparently paid for premium yikes. I don't typically like or use Ai, especially for image generation, so this wasn't something I really dived deeply into as far as comparing different models.
+
+My prompt said: "generate an elaborate tray of sushi with a hefty side of guisada tacos...." If you haven't had guisada tacos, definitely give them a try. 😙🤌
+
+The image was basically exactly what I expected it to be. I think AI prompts typically nail food images, although sometimes there can be something a little off when you actually inspect the photo. I don't speak Japanese, but I'm sure the symbol on the soy sauce(?) is gibberish, and some of the fish looks unappetizingly wet. Obviously mixing guisada and sushi sounds kind of terrible, but I like the idea of having a giant tray of my favorite foods, so I feel like it got the point across.
+
+I think the image didn't necessarily contribute much other than making it more simple to visualize to two foods in a single image or scenario. This makes it slightly easier than either taking a photo of both together at the same time or photoshopping them together. In these ways, Ai is useful in it's efficiency for things like that, but as an artist I inherently don't like using it as a replacement for the actual process of getting nice photos!
