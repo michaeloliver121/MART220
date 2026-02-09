@@ -1,4 +1,4 @@
-## I want to preface by saying this isn't necessarily as nice as I would have like, and the basic design is mostly because I have been sick with pneumonia for the past week. I am recovering though!
+## I want to preface by saying this isn't necessarily as nice as I would have liked, and the basic design is mostly because I have been sick with pneumonia for the past week. I am recovering though!
 
 For this project I used ChatGPT 5.2 to generate an image of my favorite foods mixed. I chose this one because I am most knowledgable about ChatGPT, and I forgot that my free trial for ChatGPT had ended so I apparently paid for premium yikes. I don't typically like or use Ai, especially for image generation, so this wasn't something I really dived deeply into as far as comparing different models.
 
