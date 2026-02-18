@@ -1,0 +1,2 @@
+I originally started with some toasty bagels, but ended up alternating it to Fruit Loops in some milk since I got the colors wrong. This was a little confusing for me, but I think the left side of my brain doesn't work as well as my right... although I am trying! If we continue with this next week, I'll attempt to get the milk ripples to move in an out like the fruit loop is bobbing on the milk or something.
+
