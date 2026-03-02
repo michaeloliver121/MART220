@@ -1,127 +1,215 @@
 let fruitLoops = [];
+let score = 0;
+let timeLeft = 30;
+let gameOver = false;
+let timerInterval;
 
-// Boat Position
-
-let boatX = 300;
-let boatY = 300;
-let speed = 3;
-
-// Boat Frames
-
-let idleFrames = [0, 2, 0, -2];   // Bobbing less when not moving
-let moveFrames = [0, 5, 0, -5];   // Bobbing more when moving
-
-// Animation
-
+//Animation Frame
 let currentFrame = 0;
-let frameDelay = 10; // If 10 frames go by, move forward pretty much. If not, do nothing
+let frameDelay = 10;
 let frameCounter = 0;
 
-// Setup
 
+// Food Sheet Sprites
+let foodSheet; // Food PNG is 128px, so each individual food item is about 16x16 based on the amount of rows
+const tile = 16; // Had to look this [const] up. Apparently it helps because this value should never change since the image is going to remain unchanged itself.
+const sheetC = 8; // Columns
+const sheetR = 6; // Row 7 and 8 had title text so I am just not using it for now
+
+
+// Character Sheet Sprites
+let charSheet;
+const charTile = 32; // These are 32x32 sprites instead of the 16 like the food
+
+// Idle Animation Frames
+let idleSprites = [
+    { col: 0, row: 0 },
+    { col: 1, row: 0 }
+];
+
+// Move Animation Frame
+let moveSprites = [
+    { col: 1, row: 4 },
+    { col: 3, row: 4 }
+];
+
+
+// Player Position
+let playerX = 300;
+let playerY = 300;
+let speed = 4;
+
+
+// Image Preload
+function preload() {
+    foodSheet = loadImage("images/foods.png");
+    charSheet = loadImage("images/prototype_character.png");
+}
+
+
+// Setup
 function setup() {
+
+
     createCanvas(600, 600);
 
-    // Creating Fruit Loops
 
+    // Creating Foods
     for (let i = 0; i < 10; i++) {
         let x = random(60, width - 60); //-60 means keeps away from edge of canvas
         let y = random(60, height - 60);
-        let size = random(40, 70);
-        let c = color(random(190, 240), random(140, 200), random(100, 160));
+        let size = random(30, 45); // Sizing. Changed to be a bit smaller since they were way too easy to get
+        let col = int(random(0, sheetC)); // Random column in image
+        let row = int(random(0, sheetR)); // Random row in image
 
-        fruitLoops.push(new FruitLoop(x, y, size, c));
+        fruitLoops.push(new FruitLoop(x, y, size, col, row));
     }
+
+
+    // Timer
+    timerInterval = setInterval(function () {
+
+        if (!gameOver) {
+            timeLeft--;
+
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                gameOver = true;
+                clearInterval(timerInterval); // Completely stop the timer
+            }
+        }
+
+    }, 1000); // This makes it run every one second. Got caught up on this because it looked so weird, but basically it's just a part of the setInterval function and is equal to 1 sec or 1000 milliseconds.
+
 }
 
-// Draw
 
+// Draw
 function draw() {
+
 
     background(245);
 
-    for (let loop of fruitLoops) { // Had to look this up. Very confusing for me, but after some digging it does make sense.
 
+    // Basic UI
+    fill(0);
+    textSize(20);
+    textAlign(LEFT, TOP);
+    text("Score: " + score, 20, 45);
+    text("Time: " + timeLeft, 20, 20);
+
+
+    // Food: Stop moving if game over
+    for (let loop of fruitLoops) {
+        if (!gameOver) {
+            loop.update(); // New addition to let it check the position of the fruit loops
+        }
         loop.display();
     }
 
-    moveBoat();
+
+    // Player: Stop moving if game over
+    if (!gameOver) { // Now movePlayer is tied to timerInterval
+        movePlayer();
+    } else {
+        drawPlayer(false);
+    }
+
+
+    // Collisions
+    if (!gameOver) {
+        checkCollisions();
+    }
+
+
+    // Game Over Pop Up
+    if (gameOver) {
+        textAlign(CENTER, CENTER);
+        textSize(60);
+        fill(0);
+        text("GAME OVER", width / 2, height / 2); // Right in the Middle
+    }
 }
 
-// Boat Movement
 
-function moveBoat() {
+
+// Player Movement - Arrow keys!
+function movePlayer() {
 
     let moving = false;
 
     if (keyIsDown(LEFT_ARROW)) {
-        boatX -= speed;
+        playerX -= speed;
         moving = true;
     }
     if (keyIsDown(RIGHT_ARROW)) {
-        boatX += speed;
+        playerX += speed;
         moving = true;
     }
     if (keyIsDown(UP_ARROW)) {
-        boatY -= speed;
+        playerY -= speed;
         moving = true;
     }
     if (keyIsDown(DOWN_ARROW)) {
-        boatY += speed;
+        playerY += speed;
         moving = true;
     }
 
-    // Frame Checker Part
+    // Keep player on canvas | 16x16px
+    playerX = constrain(playerX, 16, width - 16);
+    playerY = constrain(playerY, 16, height - 16);
 
+
+    // Frame Checker Part
     frameCounter++;
 
     if (frameCounter > frameDelay) { // Basically what I said above. If Frame Counter goes past the 10 value, it does the animation below.
         frameCounter = 0;
         currentFrame++;
+    }
 
-        // Animation Loop
+    if (currentFrame >= 2) {
+        currentFrame = 0;
+    }
 
-        if (moving) {
-            if (currentFrame >= moveFrames.length) { // Basically this is checking my variables up top to see if the LENGTH moves past its value of 4. If it does, it resets back to zero.
-                currentFrame = 0;
-            }
-        } else {
-            if (currentFrame >= idleFrames.length) {
-                currentFrame = 0;
-            }
+    drawPlayer(moving);
+}
+
+
+function drawPlayer(moving) {
+    imageMode(CENTER);
+
+    let frame;
+
+    if (moving) {
+        frame = moveSprites[currentFrame];
+    } else {
+        frame = idleSprites[currentFrame];
+    }
+
+    image( // Losing my mind with this one lol. It's (img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight)... Basically (what image, what x, what y, width, height, CROP X, CROP Y, CROP width, CROP height)
+        charSheet,
+        playerX, playerY,                 // Where the player is being drawn
+        64, 64,                           // This is double the size since the sprite is way too small on the canvas
+        frame.col * charTile, frame.row * charTile, // Basucally segments out the image based on the charTile size of 32. Where does the cropping start! Luckily seems like sprite sheets are set up properly for this to be easy maths
+        charTile, charTile // This is the same as the sprite size, so I could eben just put 32 here
+    );
+
+    imageMode(CORNER);
+}
+
+
+// Collisions | Just moved down what I had before into its own function
+function checkCollisions() {
+    for (let loop of fruitLoops) {
+        let d = dist(playerX, playerY, loop.x, loop.y);
+
+        if (d < 32 + loop.size / 2) { // Player sprite halved from the size I made it above
+            score++;
+            loop.respawn();
         }
     }
-
-    // Actual Animation Itself
-
-    let bob; // Water (Milk) Bobbing
-
-    if (moving) {
-        bob = moveFrames[currentFrame]; // Basically whatever frame is being loaded in the array is going to be the one effecting the boat.
-    } else {
-        bob = idleFrames[currentFrame]; // Switch from move to idle is dependent on the above variables, so it choooses either value based on its current state.
-    }
-
-    // Actual Function to Draw the Boat
-
-    drawBoat(bob, moving);
 }
 
 
-// Drawing the Boat
-
-function drawBoat(bob, moving) {
-
-    // Adding a Wake if Boat is Moving
-
-    if (moving) {
-        stroke(200); // Lighter gray color because Milk
-        line(boatX - 25, boatY, boatX - 40, boatY);
-    }
-
-    // Boat
-
-    noStroke();
-    fill(180); // Gray Boat
-    ellipse(boatX, boatY + bob, 50, 25); // BoatY + Bob is there to work with the animation. Adding Bob to the Y makes it function properly.
-}
+// Thank god for Shift + Alt + F
