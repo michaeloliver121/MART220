@@ -3,6 +3,10 @@ let startButton;
 
 let health = 3;
 
+let collectibles;
+
+let obstacles;
+
 let fruitLoops = [];
 let score = 0;
 let timeLeft = 30;
@@ -30,6 +34,7 @@ const charTile = 32; // These are 32x32 sprites instead of the 16 like the food
 var soundBG;
 var yaySound;
 var ouchSound;
+var pearSound;
 
 // Idle Animation Frames
 let idleSprites = [
@@ -57,6 +62,7 @@ function preload() {
     soundBG = loadSound('sounds/lameric.mp3');
     yaySound = loadSound("sounds/yay.mp3");
     ouchSound = loadSound("sounds/ouch.mp3");
+    pearSound = loadSound("sounds/pear.mp3");
 }
 
 
@@ -85,14 +91,59 @@ function setup() {
     }
 
     // GOOD MUSHROOM
-    let goodX = random(60, width - 60);
-    let goodY = random(60, height - 60);
-    fruitLoops.push(new FruitLoop(goodX, goodY, 40, 0, 7, "good"));
+    for (let i = 0; i < 2; i++) {
+        let goodX = random(60, width - 60);
+        let goodY = random(60, height - 60);
+        fruitLoops.push(new FruitLoop(goodX, goodY, 40, 0, 7, "good"));
+    }
 
     // BAD MUSHROOM
-    let badX = random(60, width - 60);
-    let badY = random(60, height - 60);
-    fruitLoops.push(new FruitLoop(badX, badY, 40, 1, 7, "bad"));
+    for (let i = 0; i < 2; i++) {
+        let badX = random(60, width - 60);
+        let badY = random(60, height - 60);
+        fruitLoops.push(new FruitLoop(badX, badY, 40, 1, 7, "bad"));
+    }
+
+    // Collectible Pears
+    collectibles = new Group();
+
+    for (let i = 0; i < 1; i++) {
+        let c = new collectibles.Sprite(
+            random(60, width - 60),
+            random(60, height - 60),
+            40, 40
+        );
+
+        c.addAni('spin',
+            'images/pear1.png',
+            'images/pear2.png',
+            'images/pear4.png',
+            'images/pear3.png'
+        );
+
+        c.ani = 'spin';
+        c.animation.frameDelay = 10;
+        c.visible = false;
+        c.scale = 0.15;
+    }
+
+
+    // Creating Obstacles
+    obstacles = new Group();
+
+    for (let i = 0; i < 3; i++) {
+        let o = new obstacles.Sprite(
+            random(80, width - 80),
+            random(80, height - 80),
+            60,
+            60
+        );
+
+        o.color = 'brown';
+        o.collider = 'static';
+        o.visible = false;
+    }
+
 }
 
 
@@ -103,6 +154,11 @@ function draw() {
     background(245);
 
     if (!gameStarted) {
+
+        textAlign(CENTER, CENTER);
+        textSize(20);
+        fill(0);
+        text("GET 100 POINTS TO WIN!", width / 2, height / 2 + 40);
         return; // Basically stops everything from running if the game hasn't started yet
     }
 
@@ -136,6 +192,17 @@ function draw() {
     // Collisions
     if (!gameOver) {
         checkCollisions();
+
+        for (let c of collectibles) {
+            let d = dist(playerX, playerY, c.x, c.y);
+
+            if (d < 30) {
+                score += 5;
+                pearSound.play();
+                c.x = random(60, width - 60);
+                c.y = random(60, height - 60);
+            }
+        }
     }
 
 
@@ -144,13 +211,26 @@ function draw() {
         textAlign(CENTER, CENTER);
         textSize(60);
         fill(0);
-        text("GAME OVER", width / 2, height / 2); // Right in the Middle
+        if (health <= 0) {
+            text("YOU LOSE", width / 2, height / 2);
+        } else if (score >= 100) {
+            text("YOU WIN!", width / 2, height / 2);
+        } else if (timeLeft === 0) {
+            text("RAN OUT OF TIME!", width / 2, height / 2);
+        }
     }
+
 }
 
 function startGame() {
     gameStarted = true;
     startButton.hide();
+    for (let c of collectibles) {
+        c.visible = true;
+    }
+    for (let o of obstacles) {
+        o.visible = true;
+    }
 
     // Timer
     timerInterval = setInterval(function () {
@@ -178,6 +258,8 @@ function startGame() {
 function movePlayer() {
 
     let moving = false;
+    let oldX = playerX;
+    let oldY = playerY;
 
     if (keyIsDown(LEFT_ARROW)) {
         playerX -= speed;
@@ -199,6 +281,16 @@ function movePlayer() {
     // Keep player on canvas | 16x16px
     playerX = constrain(playerX, 16, width - 16);
     playerY = constrain(playerY, 16, height - 16);
+
+    // Obstacle Collisions
+    for (let o of obstacles) {
+        let d = dist(playerX, playerY, o.x, o.y);
+
+        if (d < 40) { // tweak this if needed
+            playerX = oldX;
+            playerY = oldY;
+        }
+    }
 
 
     // Frame Checker Part
@@ -247,7 +339,7 @@ function checkCollisions() {
 
         if (d < 20 + loop.size / 2) { // 32 distance was way too lenient points-wise
             if (loop.type === "good") {
-                score += 5; // Get 5 points if you get the GOOD MUSHROOM
+                score += 2; // Get 2 points if you get the GOOD MUSHROOM
                 yaySound.play();
             } else if (loop.type === "bad") {
                 health--; // Lose 1 point of health if you get the BAD MUSHROOM
@@ -260,6 +352,11 @@ function checkCollisions() {
                 }
             } else {
                 score += 1; // Only get 1 point for all other fruit/veggies
+            }
+
+            if (score >= 100) {
+                gameOver = true;
+                clearInterval(timerInterval);
             }
 
             loop.respawn();
