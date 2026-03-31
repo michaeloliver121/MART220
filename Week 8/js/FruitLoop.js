@@ -7,11 +7,15 @@ class FruitLoop { // Keeping this as Fruit Loop for my own sanity
     this.col = col;
     this.row = row;
     this.type = type; // Good, Bad, or Normal fruit
+    this.health = (type === "bad") ? 3 : 0;
+    this.alive = true;
 
     this.moveTimer = int(random(300, 720)); // 60 frames is equal to 1 second in this scenario, so this is 5-7 interval
   }
 
   display() {
+
+    if (!this.alive) return;
 
     imageMode(CENTER); // This is easier than writing the whole / 2 stuff below
 
@@ -37,6 +41,14 @@ class FruitLoop { // Keeping this as Fruit Loop for my own sanity
       noFill();
       ellipse(this.x, this.y, this.size + 12);
       noStroke();
+
+      // Health bar above bad mushrooms
+
+      fill(255, 0, 0);
+      rect(this.x - 18, this.y - this.size / 2 - 12, 36, 6); // 3 health at 12 pixels wide EACH
+
+      fill(0, 200, 0);
+      rect(this.x - 18, this.y - this.size / 2 - 12, this.health * 12, 6);
     }
 
   }
@@ -53,7 +65,20 @@ class FruitLoop { // Keeping this as Fruit Loop for my own sanity
     }
   }
 
+  takeDamage(amount) {
+
+    if (!this.alive) return;
+
+    this.health -= amount;
+
+    if (this.health <= 0) {
+      this.health = 0;
+      this.alive = false;
+    }
+  }
+
   respawn() {
+
     this.x = random(60, width - 60);
     this.y = random(60, height - 60);
 

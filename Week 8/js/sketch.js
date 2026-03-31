@@ -4,7 +4,7 @@ let startButton;
 let health = 3;
 
 let collectibles;
-
+let particles = [];
 let obstacles;
 
 let fruitLoops = [];
@@ -17,6 +17,8 @@ let timerInterval;
 let currentFrame = 0;
 let frameDelay = 10;
 let frameCounter = 0;
+
+let hurtCooldown = 0; // Stops from getting instakilled lol
 
 
 // Food Sheet Sprites
@@ -98,7 +100,7 @@ function setup() {
     }
 
     // BAD MUSHROOM
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 5; i++) {
         let badX = random(60, width - 60);
         let badY = random(60, height - 60);
         fruitLoops.push(new FruitLoop(badX, badY, 40, 1, 7, "bad"));
@@ -158,7 +160,7 @@ function draw() {
         textAlign(CENTER, CENTER);
         textSize(20);
         fill(0);
-        text("GET 100 POINTS TO WIN!", width / 2, height / 2 + 40);
+        text("PRESS SPACE TO ATTACK THE BAD MUSHROOMS", width / 2, height / 2 + 40);
         return; // Basically stops everything from running if the game hasn't started yet
     }
 
@@ -171,6 +173,9 @@ function draw() {
     text("Time: " + timeLeft, 20, 20);
     drawHealthBar();
 
+    if (hurtCooldown > 0) {
+        hurtCooldown--;
+    }
 
     // Food: Stop moving if game over
     for (let loop of fruitLoops) {
@@ -205,15 +210,34 @@ function draw() {
         }
     }
 
+    // PARTICLES
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].display(); // Renders
+
+        if (particles[i].isDead()) {
+            particles.splice(i, 1); // removes the particles from the array
+        }
+    }
+
 
     // Game Over Pop Up
     if (gameOver) {
         textAlign(CENTER, CENTER);
         textSize(60);
         fill(0);
+
+        let allGone = true;
+        for (let loop of fruitLoops) {
+            if (loop.type === "bad" && loop.alive) {
+                allGone = false;
+                break;
+            }
+        }
+
         if (health <= 0) {
             text("YOU LOSE", width / 2, height / 2);
-        } else if (score >= 100) {
+        } else if (allGone) {
             text("YOU WIN!", width / 2, height / 2);
         } else if (timeLeft === 0) {
             text("RAN OUT OF TIME!", width / 2, height / 2);
@@ -335,15 +359,21 @@ function drawPlayer(moving) {
 // Collisions | Just moved down what I had before into its own function
 function checkCollisions() {
     for (let loop of fruitLoops) {
+        if (!loop.alive) continue;
         let d = dist(playerX, playerY, loop.x, loop.y);
 
         if (d < 20 + loop.size / 2) { // 32 distance was way too lenient points-wise
             if (loop.type === "good") {
                 score += 2; // Get 2 points if you get the GOOD MUSHROOM
                 yaySound.play();
+                loop.respawn();
+
             } else if (loop.type === "bad") {
-                health--; // Lose 1 point of health if you get the BAD MUSHROOM
-                ouchSound.play();
+                if (hurtCooldown <= 0) { // Check if hurt cooldown is over
+                    health--; // Lose 1 point of health if you get the BAD MUSHROOM
+                    ouchSound.play();
+                    hurtCooldown = 60; // 60 frames so you get a second pf invincibiility
+                }
 
                 if (health <= 0) { // Simple end game health part
                     health = 0;
@@ -352,17 +382,13 @@ function checkCollisions() {
                 }
             } else {
                 score += 1; // Only get 1 point for all other fruit/veggies
+                loop.respawn();
             }
-
-            if (score >= 100) {
-                gameOver = true;
-                clearInterval(timerInterval);
-            }
-
-            loop.respawn();
         }
     }
 }
+
+
 
 function drawHealthBar() {
 
@@ -390,4 +416,84 @@ function drawHealthBar() {
     }
 }
 
-// Thank god for Shift + Alt + F
+
+
+function attackBadFruit() {
+    for (let loop of fruitLoops) {
+        if (loop.type !== "bad" || !loop.alive) continue;
+
+        let d = dist(playerX, playerY, loop.x, loop.y);
+
+        if (d < 60) {
+            loop.takeDamage(1);
+            ouchSound.play();
+
+            for (let i = 0; i < 12; i++) {
+                particles.push(new Particle(loop.x, loop.y));
+            }
+
+            break;
+        }
+    }
+    checkBadFruitWin(); // Checks the amount of bad fruit left (function)
+}
+
+
+
+function keyPressed() {
+    if (!gameOver && gameStarted && key === ' ') { // SPACE
+        attackBadFruit();
+    }
+}
+
+
+
+function checkBadFruitWin() {
+    let allGone = true;
+
+    for (let loop of fruitLoops) {
+        if (loop.type === "bad" && loop.alive) {
+            allGone = false;
+            break;
+        }
+    }
+
+    if (allGone) {
+        gameOver = true;
+        clearInterval(timerInterval);
+    }
+}
+
+
+
+
+
+
+// PARTICLES | Easier rn to just keep it here instead of in its own js file.
+
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = random(-2, 2);
+        this.vy = random(-2, 2);
+        this.size = random(4, 8);
+        this.life = 30;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+
+    display() {
+        noStroke();
+        fill(255, 100, 0, this.life * 8);
+        ellipse(this.x, this.y, this.size);
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
