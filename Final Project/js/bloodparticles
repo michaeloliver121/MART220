@@ -1,0 +1,64 @@
+class BloodParticle {
+
+    constructor(x, y) {
+
+        this.x = x;
+        this.y = y;
+        this.vx = random(-3, 3);
+        this.vy = random(-4, 1);
+
+        this.size = random(1, 3);
+
+        this.life = 30; // 30 frames and then particles die
+        this.willStick = random() < 0.70; // 70% of the blood should stick to the "wall"
+        this.stuck = false; // Checks if it gets stuck
+    }
+
+    update() {
+
+        if (this.stuck) { // Checks to see if the particles stick to the wall
+            return;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        this.vy += 0.2;
+
+
+        // Randomly stick after moving
+        if (this.willStick && random() < 0.08) {
+
+            this.stuck = true;
+
+            this.vx = 0;
+            this.vy = 0;
+        }
+
+
+        // "Ground" collision
+        if (this.y > height - 5) {
+
+            this.y = height - 5;
+
+            this.vx = 0;
+            this.vy = 0;
+
+            this.stuck = true;
+        }
+    }
+
+    display() {
+
+        fill(160, 0, 0);
+
+        noStroke();
+
+        rect(this.x, this.y, this.size, this.size);
+    }
+
+    isDead() { //Blood stays forever!
+
+        return false;
+    }
+}
